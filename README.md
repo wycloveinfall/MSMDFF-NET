@@ -1,8 +1,3 @@
-# MSMDFF-NET
-the code for paper "A Multiscale and Multidirection Feature Fusion Network for Road Detection From Satellite Imagery".  The code will be made public after the paper is accepted.
-# sorry
-I'm very sorry, but I've fallen ill. The release of the code requires organizing references to previous code and explaining the power relations, so the release time will be delayed. The exact time will be before Apr.15.
-
 ## A Multiscale and Multidirection Feature Fusion Network for Road Detection From Satellite Imagery
 
 This paper ([MSMDFF-Net](https://ieeexplore.ieee.org/document/10477437)) has been published in IEEE TGRS 2024.
@@ -37,11 +32,27 @@ The code is built with the following dependencies:
 
 ### Data Preparation
 #### PreProcess SpaceNet Dataset
-- Convert SpaceNet 11-bit images to 8-bit Images. [1.convert_to_8bit.py](data%2Fdata_tools%2F1.convert_to_8bit.py)
-- Create road centerline.[2.cerete_label.py](data%2Fdata_tools%2F2.cerete_label.py)
-- Create road masks.[3.fill_center_line.py](data%2Fdata_tools%2F3.fill_center_line.py)
-- select Train files. [4.choose_train_flie.py](data%2Fdata_tools%2F4.choose_train_flie.py)
-
+- Convert SpaceNet 11-bit images to 8-bit Images. 
+```
+cd MSMDFF-NET-main
+python data/data_tools/SP_datatools/1.convert_to_8bit.py
+```
+- Create road centerline.
+```
+cd MSMDFF-NET-main
+python data/data_tools/SP_datatools/2.cerete_label.py
+```
+- Create road masks.
+```
+cd MSMDFF-NET-main
+python data/data_tools/SP_datatools/3.fill_center_line.py 
+```
+- select Train files. 
+  Not all JSON files can generate masks, so it's necessary to filter out paired training samples.
+```
+cd MSMDFF-NET-main
+python data/data_tools/SP_datatools/4.choose_train_flie.py 
+```
 *SpaceNet dataset tree structure.*
 
 before preprocessing
@@ -79,7 +90,7 @@ spacenet
 
 *Download DeepGlobe Road dataset in the following tree structure.*
 ```
-deepglobe
+DeepGlobe
    └───104_sat.jpg
    └───104_mask.jpg
 
@@ -95,6 +106,128 @@ MassachusettsRoads
          └───10078675_15.tif
 
 ```
-## Code organization is still in progress.
 
--2024.04.10 networks
+## Training
+Before starting the training, the above data needs to be prepared.
+### Modify the configuration file.
+[general_cfg.py](cfg_file%2Fgeneral_cfg.py)
+Open the configuration file, and then modify the following content.
+```
+################# you need to change following parameters ##############
+DATA_TYPE_flage = '1' #todo you can set 0 1 2 to select SP DP MA dataset
+batch_size = 1 #todo 
+NUMBER_WORKERS = 0 #todo
+image_size = [3,512,512] #todo
+SHUFFLE = True
+MODEL_SELECT_flag = "17" #todo
+
+LOSS_FUNCTION_flage = "0" #todo you can choose different loss function
+
+LR_SCHEDULER_flage = "6" #todo you can choose different methods for updating learning rate
+
+OPTIMIZER_flage = "6" #todo you can select different OPTIMIZER
+
+train_model_savePath = '/home/wyc/mount/DISCK_1/train_data_cache' #todo choose your save path
+
+#######################  Numeric correspondence  ###########################################################
+DATA_TYPE ={
+    "-1":'v1',
+    "0" : 'spacenet_512x512',
+    "1" : 'DeepGlobe_512x512',
+    "2" : 'Massachusetts_512x512'
+}
+_MODEL_SELECT = {
+    ############## UNet 系列 ###############
+    "1": "UNet",
+    "2": "UNet++",
+    ############## LinkNet 系列 #############
+    "5": "LinkNet18",
+    "6": "DinkNet18",
+    "7": "LinkNet34",
+    "8": "DinkNet34",
+    "9": "LinkNet50",
+    "10": "DinkNet50",
+    ############# DeepRoadMapper 2017 ##########
+    "11": "DeepRoadMapper_segment",
+    ############## RoadCNN 2018 ################
+    "12": "RoadCNN",
+    ############## Batra_net 2019 ##############
+    "13": "Batra_net",
+    ############## GAMSNet 2021 ################
+    "14": "GAMSNet",
+    ############## CADUNet 2021 ################
+    "15": "CADUNet",
+    ################## CoANet ##################
+    "16": "CoANet[withoutUB]",
+    ############## SGCNNet 2022 ################
+    "17": "SGCNNet",
+    ############### MSMDFF 2024 ##############
+    "18": "LinkNet34_MDFF",
+    "19": "LinkNet34_MDCF_s2",
+    #
+    "20": "LinkNet34_MDFF_MDCF_v2",
+    "21": "LinkNet34_MDFF_MSR",
+    "22": "LinkNet34_MSR_MDCF",
+    #
+    "23": "LinkNet34_MDFF_strip_size_3",
+    "24": "LinkNet34_MDFF_strip_size_5",
+    "25": "LinkNet34_MDFF_strip_size_7",
+    "26": "LinkNet34_MDFF_strip_size_9",
+    "27": "LinkNet34_MDFF_strip_size_11",
+    "28": "LinkNet34_MDFF_strip_size_13",
+    #
+    "29": "LinkNet34_MDCF_s2_strip_size_3",
+    "30": "LinkNet34_MDCF_s2_strip_size_5",
+    "31": "LinkNet34_MDCF_s2_strip_size_7",
+    "32": "LinkNet34_MDCF_s2_strip_size_9",
+    "33": "LinkNet34_MDCF_s2_strip_size_11",
+    "34": "LinkNet34_MDCF_s2_strip_size_13",
+    #
+    "35": "CoANet_USE_SCMD",
+    "36": "CoANet_USE_SCM",
+    "37": "MSMDFF_USE_SCMD",
+    "38": "MSMDFF_USE_SCM",
+
+}
+
+
+_LOSS_FUNCTION = {
+    '0':'dice_bce_loss',
+    '1':'MSE_loss',
+    '2':'DiceLoss',
+    '3':'MulticlassDiceLoss',
+    '4':'SoftIoULoss',
+    '5':'MSE_loss_edges',
+    '6':'dice_bce_loss_edges'
+}
+
+_LR_SCHEDULER = {
+    '0': "StepLR",# 每隔n个epoch时调整学习率，具体是用当前学习率乘以gamma即lr=lr∗gamma
+    '1':"MultiStepLR",#milestones设定调整时刻数 gamma调整系数 如构建个list设置milestones=[50,125,180]，在第50次、125次、180次时分别调整学习率，具体是用当前学习率乘以gamma即lr=lr∗gamma ；
+    '2':"ExponentialLR",
+    '3':"CosineAnnealingLR",
+    '4':"ReduceLRonPlateau",
+    '5':"LambdaLR",
+    '6':"POLY"
+    }
+
+_OPTIMIZER = {
+    '0':'SGD',
+    '1':'ASGD',
+    '2':'Rprop',
+    '3':'Adagrad',
+    '4':'Adadelta',
+    '5':'RMSprop',
+    '6':'Adam(AMSGrad)'}
+########################################################################################################################
+```
+### Run the configuration file.
+```
+cd MSMDFF-NET-main
+python cfg_file/general_cfg.py
+```
+### run traing file
+```
+cd MSMDFF-NET-main
+python train.py
+```
