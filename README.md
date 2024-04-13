@@ -27,8 +27,27 @@ If you are using the code/model provided here in a publication, please consider 
 ### Requirements
 
 The code is built with the following dependencies:
-- Python 3.8.16
-- [PyTorch](https://pytorch.org/get-started/previous-versions/) 1.8.1
+- Python ==3.8.16
+- [PyTorch](https://pytorch.org/get-started/previous-versions/) ==1.8.1
+- opencv-python==4.7.0.72
+- gdal==3.0.2
+- scikit-learn==1.2.2
+- tqdm==4.65.0
+- tensorboard==2.13.0
+- six==1.16.0 
+- torchsummary==1.5.1
+```
+conda create -n torch1.8.1
+conda activate torch1.8.1
+conda install pytorch==1.8.1 torchvision==0.9.1 torchaudio==0.8.1 cudatoolkit=10.2 -c pytorch
+conda install six==1.16.0
+conda install gdal==3.0.2
+pip install opencv-python==4.7.0.72
+pip install scikit-learn==1.2.2
+pip install tqdm==4.65.0
+pip install tensorboard==2.13.0
+pip install torchsummary==1.5.1
+```
 
 ### Data Preparation
 #### PreProcess SpaceNet Dataset
@@ -231,3 +250,5 @@ python cfg_file/general_cfg.py
 cd MSMDFF-NET-main
 python train.py
 ```
+# 维护记录
+2024.04.13 更新代码运行需要的详细的环境配置信息
