@@ -6,8 +6,8 @@
 # @Description :
 from pathlib import Path
 import sys
-import pandas as pd
-import numpy as np
+#import pandas as pd
+#import numpy as np
 def getDatapath(image_dir, dir_command = "*/",key_word :'str'= None):
     ''' 功能：返回指定路径下 指定深度下 含有指定关键词的文件
     image_dir:   输入的目标文件夹
